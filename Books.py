@@ -6,12 +6,14 @@
 # ChromeDriver z twoją wersją Chrome -> C:\ Program Files (x86)\chromedriver.exe
 
 # IMPORTOWANIE MODUŁÓW
+from ast import Num
 import contextlib
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium import webdriver
 from googletrans import Translator
+import time
 
 # ----------------------------------------------
 #                ZMIENNE GLOBALNE
@@ -37,19 +39,20 @@ setWebsides = 1
 # if setWebsides == 1:
 
 fristChapter = 1
-lastChapter = 25
+lastChapter = 270
 
 # ----------------------------------------------
 #    NAZWY KLAS Z KTÓRYCH POBIERZEMY TEKST
 # ----------------------------------------------
 
+# classes = ["booktitle", "chapter-title", "chapter-content"]
 classes = ["tit", "chapter", "txt"]
 
 # ----------------------------------------------
 #   PODZIAŁ - ILE ROZDZIAŁÓW W JEDNYM PLIKU
 # ----------------------------------------------
 
-ChaptersInFile = 25
+ChaptersInFile = 10
 
 
 # ----------------------------------------------
@@ -65,11 +68,30 @@ fileName = "nowy"
 fileNumber = 1
 
 # ----------------------------------------------
+#         TŁUMACZENIE GOOGLE lub DEEPL
+# ----------------------------------------------
+# 1 = Google - szybko, ale nie niedokładnie
+# 2 = DeepL - wolno, ale dokładnie
+
+setTranslate = 1
+
+# ----------------------------------------------
+#   ILE LINII MA BYĆ PRZEŁAMANE JEDNOCZEŚNIE
+# ----------------------------------------------
+# REKOMENDACJA:
+# Google = 50
+# DeepL = 15 lub 20 zalerzy od długości jednej linii
+
+linesNumber = 50
+# linesNumber = 20
+# linesNumber = 20
+
+# ----------------------------------------------
 #                 TYTUŁ KSIĄŻKI
 # ----------------------------------------------
 
-bookName = "ANG TITLE"
-bookNamePL = "PL TITLE"
+bookName = "Solo Leveling"
+bookNamePL = "Tylko Ja Awansuję"
 
 # ----------------------------------------------
 
@@ -77,13 +99,20 @@ bookNamePL = "PL TITLE"
 
 
 def main():
-    print("-----------------------------")
-    print("Pobiernie danych z linków...")
-    selectWebs(setWebsides)
+    # print("-----------------------------")
+    # print("Pobiernie danych z linków...")
+    # selectWebs(setWebsides)
 
-    print("-----------------------------")
-    print("Tłumaczenie tekstu...")
-    translate()
+    if setTranslate == 1:
+        print("-----------------------------")
+        print("Tłumaczenie...")
+        translateGoogle()
+
+    if setTranslate == 2:
+        print("-----------------------------")
+        print("Tłumaczenie...")
+        translateDeepL()
+        print("Zakończono tłumaczenie")
 
     print("-----------------------------")
     print("Usuwanie wybranych słów i znaków...")
@@ -139,18 +168,36 @@ def getData1(webs1):
         f.close()
 
    # Pętla pobierająca dane
+    # for i in range(fristChapter, lastChapter + 1):
+    #     driver.get(webs1[0] + str(i) + webs1[1])
+    #     for i in classes:
+    #         element = WebDriverWait(driver, 60).until(
+    #             EC.presence_of_element_located((By.CLASS_NAME, i))
+    #         )
+    #         with open("0.txt", "a", encoding="utf-8") as f:
+    #             f.write(element.text)
+    #             f.write("\n")
+    #         f.close()
+
+    # driver.quit()
+
+    # Pętla pobierająca dane za karzdym gdy pobierze dane to otworzy nową przeglądarkę
     for i in range(fristChapter, lastChapter + 1):
         driver.get(webs1[0] + str(i) + webs1[1])
         for i in classes:
-            element = WebDriverWait(driver, 10).until(
+            element = WebDriverWait(driver, 60).until(
                 EC.presence_of_element_located((By.CLASS_NAME, i))
             )
             with open("0.txt", "a", encoding="utf-8") as f:
                 f.write(element.text)
                 f.write("\n")
             f.close()
+        driver.quit()
+        PATH = "C:\Program Files (x86)\chromedriver.exe"
+        driver = webdriver.Chrome(PATH)
 
     driver.quit()
+
 
 # POBRANIE DANYCH ZE STRON 2
 
@@ -178,23 +225,99 @@ def getData2(webs2):
 
     driver.quit()
 
+
 # TŁUMACZENIE TEKSTU NA POLSKI
 
 
-def translate():
+def translateGoogle():
     with open("0.txt", "r", encoding="utf-8") as f:
         lines = f.readlines()
         f.close()
 
-    # 50 linijek tekstu na raz
     with open("0.txt", "w", encoding="utf-8") as f:
-        for i in range(0, len(lines), 50):
+        for i in range(0, len(lines), linesNumber):
             translator = Translator()
             translation = translator.translate(
-                "".join(lines[i:i + 50]), dest="pl")
+                "".join(lines[i:i + linesNumber]), dest="pl")
             f.write(translation.text)
             f.write("\n")
         f.close()
+
+
+def translateDeepL():
+    # PATH = "C:\Program Files (x86)\chromedriver.exe"
+    # driver = webdriver.Chrome(PATH)
+    # driver.get("https://www.deepl.com/pl/translator#en/pl")
+
+    # with open("0.txt", "r", encoding="utf-8") as f:
+    #     lines = f.readlines()
+    # f.close()
+
+    # # Informacja o czasie trwania tłumaczenia
+    # NumberOfLines = len(lines)
+    # print("Liczba linii w pliku: " + str(NumberOfLines))
+    # print("Szacowany czas tłumaczenia to ponad: " +
+    #       str((NumberOfLines / linesNumber)*10/60) + " min")
+
+    # with open("0.txt", "w", encoding="utf-8") as f:
+    #     #  15 linijek tekstu na raz, najlepiej 1 wypowiedź w 1 linijce
+    #     # te 15 linijek nie może przekraczać 5000 znaków
+    #     for i in range(0, len(lines), linesNumber):
+    #         text = "".join(lines[i:i+linesNumber])
+    #         element = WebDriverWait(driver, 10).until(
+    #             EC.presence_of_element_located((By.XPATH, '//*[@id="panelTranslateText"]/div[2]/section[1]/div[3]/div[2]/textarea')))
+    #         element.send_keys(text)
+    #         time.sleep(10)
+    #         # tłumaczenie
+    #         element = WebDriverWait(driver, 10).until(
+    #             EC.presence_of_element_located((By.XPATH, '//*[@id="target-dummydiv"]')))
+    #         element = element.get_attribute('innerHTML')
+    #         f.write(element)
+
+    #         element = WebDriverWait(driver, 10).until(
+    #             EC.presence_of_element_located((By.XPATH, '//*[@id="panelTranslateText"]/div[2]/section[1]/div[3]/div[2]/textarea')))
+    #         element.clear()
+
+    #     f.close()
+    # driver.quit()
+
+    # Tłumaczenie za pomocą przeglądarki
+    PATH = "C:\Program Files (x86)\chromedriver.exe"
+    driver = webdriver.Chrome(PATH)
+    driver.get("https://www.deepl.com/pl/translator#en/pl")
+
+    with open("0.txt", "r", encoding="utf-8") as f:
+        lines = f.readlines()
+    f.close()
+
+    # Informacja o czasie trwania tłumaczenia
+    NumberOfLines = len(lines)
+    print("Liczba linii w pliku: " + str(NumberOfLines))
+    print("Szacowany czas tłumaczenia to ponad: " +
+          str((NumberOfLines / linesNumber)*10/60) + " min")
+
+    with open("0.txt", "w", encoding="utf-8") as f:
+        #  15 linijek tekstu na raz, najlepiej 1 wypowiedź w 1 linijce
+        # te 15 linijek nie może przekraczać 5000 znaków
+        for i in range(0, len(lines), linesNumber):
+            text = "".join(lines[i:i+linesNumber])
+            element = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, '/html/body/div[3]/main/div[6]/div[1]/div[2]/section[1]/div[3]/div[2]/textarea')))
+            element.send_keys(text)
+            time.sleep(10)
+            # tłumaczenie
+            element = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, '//*[@id="target-dummydiv"]')))
+            element = element.get_attribute('innerHTML')
+            f.write(element)
+
+            element = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, '/html/body/div[3]/main/div[5]/div[2]/div[2]/section[1]/div[3]/div[2]/textarea')))
+            element.clear()
+
+        f.close()
+
+    driver.quit()
 
 
 # USUWANIE WYBRANYCH SŁOWÓW I ZNAKÓW
@@ -210,6 +333,7 @@ def erasingWords():
             for word in words:
                 line = line.replace(word, "")
             f.write(line)
+
 
 # PODZIAŁ NA PLIKI - ILE ROZDZIAŁÓW W JEDNYM PLIKU
 
